@@ -1,4 +1,4 @@
-const api_url = "http://grad_api.smorsoft.com:8080";
+const api_url = "https://grad-api.smorsoft.com";
 const turn_urls = ["turn:turn1.smorsoft.com:3478"];
 
 document.onload = loadPage("html/home.html");
