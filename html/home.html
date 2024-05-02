@@ -1,0 +1,46 @@
+<section style="margin-left:auto; margin-right:auto; width:fit-content">
+	<form style="display:flex; flex-direction:column;" id="join-form">
+		<label for="room-code">Room Code</label>
+		<input type="text" id="room-code" name="room-code">
+		<br>
+		<label for="player-name">Name</label>
+		<input type="text" id="player-name" name="player-name">
+		<br>
+		<input type="submit" value="Submit">
+	</form>
+</section>
+
+<script>
+	let joinForm = document.getElementById("join-form");
+
+	joinForm.addEventListener("submit", (e) => {
+		e.preventDefault();
+
+		$.ajax({
+			url: CreateHTTPRequest(
+				api_url,
+				"/api/Lobby/Join",
+				[
+					{ name: "lobbyId", value: document.getElementById("room-code").value },
+					{ name: "name", value: document.getElementById("player-name").value },
+				]
+			),
+			method: "POST",
+			success: function (result) {
+				console.log(result);
+
+				lobbyId = result.lobbyId;
+				turnUsername = result.player.turnUsername;
+				turnPassword = result.player.turnPassword;
+
+				initialize_peer(result.lobbySdp);
+			},
+			error: function (error) {
+				console.log(error);
+				alert("Error joining lobby");
+			}
+		})
+	});
+
+
+</script>
