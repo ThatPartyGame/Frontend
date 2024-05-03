@@ -39,6 +39,9 @@ async function initialize_peer(lobbySdp) {
 				urls: turn_urls,
 				username: turnUsername,
 				credential: turnPassword,
+			},
+			{
+				urls: ["stun:stun1.l.google.com:19302", "stun:stun3.l.google.com:19302"]
 			}
 		]
 	});
