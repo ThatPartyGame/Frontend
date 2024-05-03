@@ -63,27 +63,17 @@ async function initialize_peer(lobbySdp) {
 		}
 	});
 
-	peer.addEventListener('icegatheringstatechange', (event) => {
-		if (peer.iceGatheringState == "complete") {
-			console.log("Ice gathering complete");
-			Answer();
-		}
-	});
-
-
 	peer.setRemoteDescription({ type: "offer", sdp: lobbySdp.session });
 
-	lobbySdp.iceCandidates.forEach((candidateSDP) => {
+	for (const candidateSDP of lobbySdp.iceCandidates) {
 		var candidate = new RTCIceCandidate({
 			sdpMid: candidateSDP.media,
 			sdpMLineIndex: candidateSDP.index,
 			candidate: candidateSDP.name
 		});
-		peer.addIceCandidate(candidate);
-	});
-}
+		await peer.addIceCandidate(candidate);
+	}
 
-async function Answer() {
 	var answer = await peer.createAnswer();
 
 	peer.setLocalDescription(answer);
