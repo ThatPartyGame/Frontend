@@ -1,5 +1,5 @@
 const api_url = "https://grad-api.smorsoft.com";
-const turn_urls = ["turn:turn1.smorsoft.com:443?transport=tcp", "stun:turn1.smorsoft.com"];
+const turn_urls = ["turn:turn1.smorsoft.com:3478?transport=tcp", "stun:turn1.smorsoft.com"];
 
 document.onload = loadPage("html/home.html");
 
@@ -62,6 +62,28 @@ async function initialize_peer(lobbySdp) {
 				break;
 		}
 	});
+
+	peer.addEventListener('icecandidateerror', (error) => {
+		console.log(error);
+	});
+
+	peer.addEventListener('iceconnectionstatechange', (error) => {
+		console.log(error);
+	});
+
+	peer.addEventListener('icegatheringstatechange', (error) => {
+		console.log(error);
+	});
+
+	peer.addEventListener('negotiationneeded', (error) => {
+		console.log(error);
+	});
+
+	peer.addEventListener('signalingstatechange', (error) => {
+		console.log(error);
+	});
+
+
 
 	peer.setRemoteDescription({ type: "offer", sdp: lobbySdp.session });
 
