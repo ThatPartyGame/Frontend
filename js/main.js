@@ -35,11 +35,11 @@ async function initialize_peer(lobbySdp) {
 
 	peer = new RTCPeerConnection({
 		iceServers: [
-			{
-				urls: turn_urls,
-				username: turnUsername,
-				credential: turnPassword,
-			},
+			// {
+			// 	urls: turn_urls,
+			// 	username: turnUsername,
+			// 	credential: turnPassword,
+			// },
 			{
 				urls: ["stun:stun1.l.google.com:19302", "stun:stun3.l.google.com:19302"]
 			}
