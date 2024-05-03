@@ -1,5 +1,5 @@
 const api_url = "https://grad-api.smorsoft.com";
-const turn_urls = ["turn:turn1.smorsoft.com:3478"];
+const turn_urls = ["turn:turn1.smorsoft.com:443"];
 
 document.onload = loadPage("html/home.html");
 
