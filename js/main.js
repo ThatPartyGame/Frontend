@@ -1,5 +1,5 @@
 const api_url = "https://grad-api.smorsoft.com";
-const turn_urls = ["turn:turn1.smorsoft.com:443"];
+const turn_urls = ["turn:turn1.smorsoft.com:3478", "stun:turn1.smorsoft.com:3478"];
 
 document.onload = loadPage("html/home.html");
 
@@ -35,14 +35,14 @@ async function initialize_peer(lobbySdp) {
 
 	peer = new RTCPeerConnection({
 		iceServers: [
-			// {
-			// 	urls: turn_urls,
-			// 	username: turnUsername,
-			// 	credential: turnPassword,
-			// },
 			{
-				urls: ["stun:stun1.l.google.com:19302", "stun:stun3.l.google.com:19302"]
+				urls: turn_urls,
+				username: turnUsername,
+				credential: turnPassword,
 			}
+			// {
+			// 	urls: ["stun:stun1.l.google.com:19302", "stun:stun3.l.google.com:19302"]
+			// }
 		]
 	});
 
