@@ -63,26 +63,12 @@ async function initialize_peer(lobbySdp) {
 		}
 	});
 
-	peer.addEventListener('icecandidateerror', (error) => {
-		console.log(error);
+	peer.addEventListener('icegatheringstatechange', (event) => {
+		if (peer.iceGatheringState == "complete") {
+			console.log("Ice gathering complete");
+			Answer();
+		}
 	});
-
-	peer.addEventListener('iceconnectionstatechange', (error) => {
-		console.log(error);
-	});
-
-	peer.addEventListener('icegatheringstatechange', (error) => {
-		console.log(error);
-	});
-
-	peer.addEventListener('negotiationneeded', (error) => {
-		console.log(error);
-	});
-
-	peer.addEventListener('signalingstatechange', (error) => {
-		console.log(error);
-	});
-
 
 
 	peer.setRemoteDescription({ type: "offer", sdp: lobbySdp.session });
@@ -95,7 +81,9 @@ async function initialize_peer(lobbySdp) {
 		});
 		peer.addIceCandidate(candidate);
 	});
+}
 
+async function Answer() {
 	var answer = await peer.createAnswer();
 
 	peer.setLocalDescription(answer);
