@@ -9,6 +9,9 @@ var turnUsername;
 var turnPassword;
 var channel;
 
+var candidates = [];
+var answer;
+
 function CreateHTTPRequest(base_url, path, parameters) {
 	var request = base_url + path;
 	if (parameters.length > 0) {
@@ -63,6 +66,20 @@ async function initialize_peer(lobbySdp) {
 		}
 	});
 
+	peer.onicecandidate = (candidate) => {
+		candidates.push({
+			media: candidate.candidate.sdpMid,
+			index: candidate.candidate.sdpMLineIndex,
+			name: candidate.candidate.candidate
+		});
+	};
+
+	peer.onicegatheringstatechange = (_) => {
+		if (peer.iceGatheringState == "complete") {
+			SetSDP();
+		}
+	};
+
 	peer.setRemoteDescription({ type: "offer", sdp: lobbySdp.session });
 
 	for (const candidateSDP of lobbySdp.iceCandidates) {
@@ -74,10 +91,11 @@ async function initialize_peer(lobbySdp) {
 		await peer.addIceCandidate(candidate);
 	}
 
-	var answer = await peer.createAnswer();
-
+	answer = await peer.createAnswer();
 	peer.setLocalDescription(answer);
+}
 
+async function SetSDP() {
 	$.ajax({
 		url: CreateHTTPRequest(
 			api_url,
@@ -91,13 +109,7 @@ async function initialize_peer(lobbySdp) {
 		contentType: "application/json",
 		data: JSON.stringify({
 			session: answer.sdp,
-			iceCandidates: [
-				{
-					media: "string",
-					index: 0,
-					name: "string"
-				}
-			],
+			iceCandidates: candidates,
 		}),
 		success: function (result) {
 			console.log(result);
