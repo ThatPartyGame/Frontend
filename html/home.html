@@ -1,46 +1,53 @@
 <section style="margin-left:auto; margin-right:auto; width:fit-content">
-	<form style="display:flex; flex-direction:column;" id="join-form">
+	<form autocomplete="off" style="display:flex; flex-direction:column;" id="join-form">
 		<label for="room-code">Room Code</label>
-		<input type="text" id="room-code" name="room-code">
-		<br>
+		<input required minlength="4" placeholder="XXXX" type="text" id="room-code" name="room-code">
+		<!-- <br> -->
 		<label for="player-name">Name</label>
-		<input type="text" id="player-name" name="player-name">
+		<input maxlength="12" placeholder="Enter your name" type="text" id="player-name" name="player-name">
 		<br>
-		<input type="submit" value="Submit">
+		<input disabled id="join-button" type="submit" value="Join">
 	</form>
 </section>
 
 <script>
-	let joinForm = document.getElementById("join-form");
+	{
+		var joinForm = document.getElementById("join-form");
+		var roomCode = document.getElementById("room-code");
+		var playerName = document.getElementById("player-name");
+		var joinButton = document.getElementById("join-button");
 
-	joinForm.addEventListener("submit", (e) => {
-		e.preventDefault();
-
-		$.ajax({
-			url: CreateHTTPRequest(
-				api_url,
-				"/api/Lobby/Join",
-				[
-					{ name: "lobbyId", value: document.getElementById("room-code").value },
-					{ name: "name", value: document.getElementById("player-name").value },
-				]
-			),
-			method: "POST",
-			success: function (result) {
-				console.log(result);
-
-				lobbyId = result.lobbyId;
-				turnUsername = result.player.turnUsername;
-				turnPassword = result.player.turnPassword;
-
-				initialize_peer(result.lobbySdp);
-			},
-			error: function (error) {
-				console.log(error);
-				alert("Error joining lobby");
+		async function verify_room_code() {
+			if (roomCode.value.length >= 4) {
+				var check = await Player.checkLobby(roomCode.value);
+				if (check != null && check.state == 0) {
+					joinButton.removeAttribute("disabled");
+					return;
+				}
 			}
-		})
-	});
 
+			joinButton.setAttribute("disabled", true);
+		}
 
+		joinForm.onsubmit = (e) => {
+			e.preventDefault();
+
+			player = new Player(roomCode.value, playerName.value);
+		};
+
+		roomCode.oninput = async (_) => {
+			await verify_room_code();
+		};
+
+		var stored = Player.readFromLocalStorage();
+		console.log(stored);
+		if (stored != null) {
+			var check = Player.checkLobby(stored.lobbyId);
+			if (check != null) {
+				roomCode.value = stored.lobbyId;
+				playerName.value = stored.username;
+				verify_room_code();
+			}
+		}
+	}
 </script>
