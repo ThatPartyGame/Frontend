@@ -35,19 +35,22 @@
 			player = new Player(roomCode.value, playerName.value);
 		};
 
-		roomCode.oninput = async (_) => {
-			await verify_room_code();
+		roomCode.oninput = (_) => {
+			verify_room_code();
 		};
 
-		var stored = Player.readFromLocalStorage();
-		console.log(stored);
-		if (stored != null) {
-			var check = Player.checkLobby(stored.lobbyId);
-			if (check != null) {
-				roomCode.value = stored.lobbyId;
-				playerName.value = stored.username;
-				verify_room_code();
+		async function check_stored_lobby() {
+			var stored = Player.readFromLocalStorage();
+			if (stored != null) {
+				var check = await Player.checkLobby(stored.lobbyId);
+				if (check != null) {
+					roomCode.value = stored.lobbyId;
+					playerName.value = stored.username;
+					verify_room_code();
+				}
 			}
 		}
+
+		check_stored_lobby();
 	}
 </script>

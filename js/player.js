@@ -10,6 +10,13 @@ function CreateHTTPRequest(base_url, path, parameters) {
 	return request;
 }
 
+const packet_event = new CustomEvent("packet",);
+
+const Magic = {
+	Username: -1,
+	SetPage: -2,
+};
+
 var player;
 
 class Connection {
@@ -20,9 +27,12 @@ class Connection {
 	answer;
 	candidates = [];
 
-	constructor(lobbyId, turnUsername, turnPassword) {
+	on_packet_callback
+
+	constructor(lobbyId, turnUsername, turnPassword, on_packet_callback) {
 		this.lobbyId = lobbyId;
 		this.turnPassword = turnPassword;
+		this.on_packet_callback = on_packet_callback;
 
 		this.init(this.lobbyId, turnUsername, this.turnPassword);
 	}
@@ -45,7 +55,7 @@ class Connection {
 
 
 		this.channel = this.peer.createDataChannel("data", { negotiated: true, id: 1 });
-		this.channel.addEventListener('message', this.on_message.bind(this));
+		this.channel.addEventListener('message', this.on_packet.bind(this));
 		this.peer.addEventListener('connectionstatechange', this.on_connection_state_change.bind(this));
 		this.peer.addEventListener('icegatheringstatechange', this.on_ice_gathering_state_change.bind(this));
 
@@ -126,15 +136,36 @@ class Connection {
 	on_connection_state_change(_) {
 		switch (this.peer.connectionState) {
 			case "connected":
-				alert("Connected!");
+
 				break;
 			default:
 				break;
 		}
 	}
 
-	on_message(event) {
-		alert(event.data);
+	on_packet(packet) {
+		var magic = new DataView(packet.data, 0, 4).getInt32(0, true);
+		var without_magic = new DataView(packet.data, 4);
+		this.on_packet_callback(magic, without_magic);
+	}
+
+	send_packet(packet) {
+		this.channel.send(packet);
+	}
+
+	send_magic(magic) {
+		var packet = new ArrayBuffer(4);
+		new DataView(packet).setInt32(0, magic, true);
+		this.send_packet(packet);
+	}
+
+	prepend_and_send(magic, in_packet) {
+		var packet = new ArrayBuffer(4 + in_packet.byteLength);
+		var dataView = new DataView(packet);
+		dataView.setInt32(0, magic, true);
+		new Uint8Array(packet).set(new Uint8Array(in_packet), 4);
+
+		this.send_packet(packet);
 	}
 }
 
@@ -154,20 +185,22 @@ class Player {
 
 		var stored = Player.readFromLocalStorage();
 		if (stored != null &&
+			stored.lobbyId != null &&
+			stored.username != null &&
 			stored.lobbyId.toUpperCase() == init_lobbyId.toUpperCase() &&
 			stored.username.toUpperCase() == init_playerName.toUpperCase()) {
 			this.lobbyId = stored.lobbyId;
 			this.username = stored.username;
 			this.turnUsername = stored.turnUsername;
 			this.turnPassword = stored.turnPassword;
-			this.connection = new Connection(this.lobbyId, this.turnUsername, this.turnPassword);
+			this.connection = new Connection(this.lobbyId, this.turnUsername, this.turnPassword, this.on_packet.bind(this));
 		} else {
 			this.join(init_lobbyId, init_playerName).then((_) => {
-				this.connection = new Connection(this.lobbyId, this.turnUsername, this.turnPassword);
+				this.connection = new Connection(this.lobbyId, this.turnUsername, this.turnPassword, this.on_packet.bind(this));
 			});
 		}
-		
-		this.saveToLocalStorage();
+
+		console.log(this);
 		player = this;
 	}
 
@@ -189,24 +222,22 @@ class Player {
 	}
 
 	static async checkLobby(lobbyIdToCheck) {
-		var data;
-		await $.ajax({
-			url: CreateHTTPRequest(
-				api_url,
-				"/api/Lobby/CheckLobby",
-				[
-					{ name: "lobbyId", value: lobbyIdToCheck },
-				]
-			),
-			method: "GET",
-			success: (result) => {
-				data = result;
-			},
-			error: (_) => {
-				data = null;
-			}
-		});
-		return data;
+		try {
+			var result = await $.ajax({
+				url: CreateHTTPRequest(
+					api_url,
+					"/api/Lobby/CheckLobby",
+					[
+						{ name: "lobbyId", value: lobbyIdToCheck },
+					]
+				),
+				method: "GET",
+			});
+			console.log(result);
+			return result;
+		} catch (e) {
+
+		}
 	}
 
 	async join(init_lobbyId, init_playerName) {
@@ -232,6 +263,16 @@ class Player {
 				alert("Unable to join :(");
 			}
 		});
+
+		this.saveToLocalStorage();
+	}
+
+	on_packet(magic, packet) {
+		switch (magic) {
+			case Magic.Username:
+				this.connection.prepend_and_send(Magic.Username, new TextEncoder().encode(this.username).buffer);
+				break;
+		}
 	}
 }
 
