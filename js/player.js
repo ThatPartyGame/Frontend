@@ -10,14 +10,19 @@ function CreateHTTPRequest(base_url, path, parameters) {
 	return request;
 }
 
-const packet_event = new CustomEvent("packet",);
-
 const Magic = {
 	Username: -1,
 	SetPage: -2,
 };
 
+
 var player;
+
+function ConnectionFailed() {
+	player = null;
+	alert("Lost connection to the host.")
+	loadPage("html/home.html");
+}
 
 class Connection {
 	lobbyId;
@@ -134,9 +139,13 @@ class Connection {
 	}
 
 	on_connection_state_change(_) {
+		console.log("Peer connection state changed to: " + this.peer.connectionState);
 		switch (this.peer.connectionState) {
 			case "connected":
 
+				break;
+			case "failed":
+				ConnectionFailed();
 				break;
 			default:
 				break;
@@ -271,6 +280,11 @@ class Player {
 		switch (magic) {
 			case Magic.Username:
 				this.connection.prepend_and_send(Magic.Username, new TextEncoder().encode(this.username).buffer);
+				break;
+			case Magic.SetPage:
+				var page = new TextDecoder("utf-8").decode(packet);
+				console.log("Set page to: " + page);
+				loadPage(page);
 				break;
 		}
 	}
