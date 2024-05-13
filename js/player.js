@@ -276,6 +276,18 @@ class Player {
 		this.saveToLocalStorage();
 	}
 
+	send_packet(packet) {
+		this.connection.send_packet(packet);
+	}
+
+	send_magic(magic) {
+		this.connection.send_magic(magic);
+	}
+
+	prepend_and_send(magic, packet) {
+		this.connection.prepend_and_send(magic, packet);
+	}
+
 	on_packet(magic, packet) {
 		switch (magic) {
 			case Magic.Username:

@@ -1,0 +1,13 @@
+<section style="margin-left:auto; margin-right:auto; width:fit-content">
+	<button id="start-button"><a>Start</a></button>
+</section>
+
+<script>
+	{
+		var startButton = document.getElementById("start-button");
+
+		startButton.onclick = (e) => {
+			player.send_magic(BingoMagic.Start);
+		};
+	}
+</script>
