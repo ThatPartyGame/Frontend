@@ -1,0 +1,34 @@
+<section style="margin-left:auto; margin-right:auto; width:fit-content">
+	<p>
+		Please predict what you can get <span id="prediction-player-name">PLAYERNAME</span> to answer.
+	</p>
+	<textarea maxlength=50 class="prediction" placeholder="prediction1"></textarea><br><br>
+	<textarea maxlength=50 class="prediction" placeholder="prediction2"></textarea><br><br>
+	<textarea maxlength=50 class="prediction" placeholder="prediction3"></textarea><br><br>
+	<textarea maxlength=50 class="prediction" placeholder="prediction4"></textarea><br><br>
+	<textarea maxlength=50 class="prediction" placeholder="prediction5"></textarea><br><br>
+	<button id="submit-button">Submit</button>
+</section>
+
+<script>
+	{
+		var predictions = document.getElementsByClassName("prediction");
+		var submitButton = document.getElementById("submit-button");
+
+		submitButton.onclick = (_) => {
+			var data = "";
+			for (const prediction of predictions) {
+				if (prediction.value == "") {
+					continue;
+				}
+
+				data += prediction.value;
+				data += "|";
+			}
+			console.log(data);
+			// data = data.substring(0, -1); // Remove the trailing "|"
+
+			player.prepend_and_send(BingoMagic.Predictions, encode_text(data));
+		};
+	}
+</script>

@@ -10,11 +10,6 @@ function CreateHTTPRequest(base_url, path, parameters) {
 	return request;
 }
 
-const Magic = {
-	Username: -1,
-	SetPage: -2,
-};
-
 
 var player;
 
@@ -291,12 +286,18 @@ class Player {
 	on_packet(magic, packet) {
 		switch (magic) {
 			case Magic.Username:
-				this.connection.prepend_and_send(Magic.Username, new TextEncoder().encode(this.username).buffer);
+				this.connection.prepend_and_send(Magic.Username, encode_text(this.username));
 				break;
 			case Magic.SetPage:
-				var page = new TextDecoder("utf-8").decode(packet);
+				var page = decode_text(packet);
 				console.log("Set page to: " + page);
 				loadPage(page);
+				break;
+			case Magic.SetTextContent:
+				var data = decode_text(packet);
+				var split = data.split("|");
+				console.log(split);
+				document.querySelector(split[0]).innerText = split[1];
 				break;
 		}
 	}
