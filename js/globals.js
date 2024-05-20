@@ -21,4 +21,6 @@ const Magic = {
 const BingoMagic = {
 	Start: 0,
 	Predictions: 1,
+	TextPrompt: 2,
+	TextPromptAnswer: 3,
 };

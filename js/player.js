@@ -181,6 +181,12 @@ class Player {
 
 	connection;
 
+	packet_callbacks = [];
+
+	set on_packet(p_callback) {
+		this.packet_callbacks.push(p_callback);
+	}
+
 	constructor(init_lobbyId, init_playerName) {
 		var check = Player.checkLobby(init_lobbyId);
 		if (check == null) {
@@ -197,10 +203,10 @@ class Player {
 			this.username = stored.username;
 			this.turnUsername = stored.turnUsername;
 			this.turnPassword = stored.turnPassword;
-			this.connection = new Connection(this.lobbyId, this.turnUsername, this.turnPassword, this.on_packet.bind(this));
+			this.connection = new Connection(this.lobbyId, this.turnUsername, this.turnPassword, this._on_packet.bind(this));
 		} else {
 			this.join(init_lobbyId, init_playerName).then((_) => {
-				this.connection = new Connection(this.lobbyId, this.turnUsername, this.turnPassword, this.on_packet.bind(this));
+				this.connection = new Connection(this.lobbyId, this.turnUsername, this.turnPassword, this._on_packet.bind(this));
 			});
 		}
 
@@ -278,12 +284,13 @@ class Player {
 	send_magic(magic) {
 		this.connection.send_magic(magic);
 	}
-
 	prepend_and_send(magic, packet) {
 		this.connection.prepend_and_send(magic, packet);
 	}
 
-	on_packet(magic, packet) {
+	_on_packet(magic, packet) {
+		console.log("Magic: " + magic.toString() + ", Packet: " + decode_text(packet));
+
 		switch (magic) {
 			case Magic.Username:
 				this.connection.prepend_and_send(Magic.Username, encode_text(this.username));
@@ -298,6 +305,13 @@ class Player {
 				var split = data.split("|");
 				console.log(split);
 				document.querySelector(split[0]).innerText = split[1];
+				break;
+			default:
+				for (const callback of this.packet_callbacks) {
+					if (callback != null) {
+						callback(magic, packet);
+					}
+				}
 				break;
 		}
 	}
