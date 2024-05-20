@@ -1,5 +1,5 @@
 <section style="margin-left:auto; margin-right:auto; width:fit-content">
-	<h3>Please choose your favorite prediction and prompt/answer combination</h3>
+	<h3>Please choose your favorite prediction and prompt/answer combination to present</h3>
 	<form autocomplete="off" id="choose-form">
 		<label for="prediction">Prediction</label><br>
 		<section id="predictions">
@@ -14,7 +14,7 @@
 </section>
 
 <script type="text/html" id="prediction_tmpl">
-	<input type="radio" name="prediction" checked><label><%=prediction%></label><br>
+	<input type="radio" name="prediction" class="prediction" checked><label><%=prediction%></label><br>
 </script>
 
 <script type="text/html" id="prompt_tmpl">
@@ -51,7 +51,13 @@
 
 		chooseForm.onsubmit = (e) => {
 			e.preventDefault();
-			// player.prepend_and_send(BingoMagic.TextPromptAnswer, encode_text(prompt.value));
+			var children = predictions.querySelectorAll(".prediction");
+			for (var i = 0; i < children.length; i++) {
+				if (children[i].checked) {
+					player.prepend_and_send(BingoMagic.TextPromptChoice, encode_text(i.toString()));
+					break;
+				}
+			}
 		};
 	}
 </script>

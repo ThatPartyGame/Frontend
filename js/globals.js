@@ -23,4 +23,5 @@ const BingoMagic = {
 	Predictions: 1,
 	TextPrompt: 2,
 	TextPromptAnswer: 3,
+	TextPromptChoice: 4,
 };
