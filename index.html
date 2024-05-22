@@ -11,13 +11,12 @@
 <body>
 	<div id="content"></div>
 	<script type="text/javascript" src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-	<!-- <script type="module" src="js/lit-core.min.js"></script> -->
-	<script type="text/javascript" src="js/jquery.min.js"></script>
-	<script type="text/javascript" src="js/templates.js"></script>
-	<script type="text/javascript" src="js/globals.js"></script>
-	<script type="text/javascript" src="js/spa.js"></script>
-	<script type="text/javascript" src="js/player.js"></script>
-	<script type="text/javascript" src="js/startup.js"></script>
+	<script type="module" src="/modules/main.js"></script>
 </body>
 
 </html>
+
+<script type="module">
+	import { loadPage } from "/modules/Common.js"
+	loadPage("/html/home.html")
+</script>

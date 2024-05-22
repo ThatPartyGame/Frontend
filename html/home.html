@@ -10,47 +10,45 @@
 	</form>
 </section>
 
-<script>
-	{
-		var joinForm = document.getElementById("join-form");
-		var roomCode = document.getElementById("room-code");
-		var playerName = document.getElementById("player-name");
-		var joinButton = document.getElementById("join-button");
+<script type="module">
+	import { CheckStored, CheckLobby, Join } from "/modules/main.js"
 
-		async function verify_room_code() {
-			if (roomCode.value.length >= 4) {
-				var check = await Player.checkLobby(roomCode.value);
-				if (check != null && check.state == 0) {
-					joinButton.removeAttribute("disabled");
-					return;
-				}
-			}
+	var joinForm = document.getElementById("join-form");
+	var roomCode = document.getElementById("room-code");
+	var playerName = document.getElementById("player-name");
+	var joinButton = document.getElementById("join-button");
 
-			joinButton.setAttribute("disabled", true);
-		}
+	async function verify_room_code() {
+		console.log("1")
+		if (roomCode.value.length >= 4) {
+			console.log("2")
 
-		joinForm.onsubmit = (e) => {
-			e.preventDefault();
+			var check = await CheckLobby(roomCode.value);
+			console.log(check);
+			if (check != null && check.state == 0) {
+				console.log("3")
 
-			player = new Player(roomCode.value, playerName.value);
-		};
-
-		roomCode.oninput = (_) => {
-			verify_room_code();
-		};
-
-		async function check_stored_lobby() {
-			var stored = Player.readFromLocalStorage();
-			if (stored != null) {
-				var check = await Player.checkLobby(stored.lobbyId);
-				if (check != null) {
-					roomCode.value = stored.lobbyId;
-					playerName.value = stored.username;
-					verify_room_code();
-				}
+				joinButton.removeAttribute("disabled");
+				return;
 			}
 		}
 
-		check_stored_lobby();
+		joinButton.setAttribute("disabled", true);
+	}
+
+	joinForm.onsubmit = (e) => {
+		e.preventDefault();
+		Join(roomCode.value, playerName.value);
+	};
+
+	roomCode.oninput = (_) => {
+		verify_room_code();
+	};
+
+	var stored = await CheckStored();
+	if (stored != null) {
+		roomCode.value = stored.lobbyId;
+		playerName.value = stored.username;
+		verify_room_code();
 	}
 </script>
