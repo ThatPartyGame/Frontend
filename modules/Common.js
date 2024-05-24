@@ -23,7 +23,7 @@ export function setPage(html) {
 	if (controller != null) {
 		controller.abort();
 	}
-	
+
 	$("#content").html(html);
 }
 

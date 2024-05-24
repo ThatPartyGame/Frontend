@@ -33,9 +33,17 @@ export async function CheckStored() {
 
 
 export const Magic = {
-	Username: -1,
-	SetPage: -2,
+	USERNAME: -1,
+	BYTES: -2,
+	EVENT: -3,
+	ADD_CHILDREN: -4,
+	DISCONNECT: -5,
+	UPDATE_ATTRIBUTE: -6,
+	REPARENT: -7,
+	REQUEST_ATTRIBUTE: -8
 };
+
+
 
 function CreateHTTPRequest(base_url, path, parameters) {
 	var request = base_url + path;
@@ -50,6 +58,10 @@ function CreateHTTPRequest(base_url, path, parameters) {
 }
 
 function Failed() {
+
+}
+
+function LostConnection() {
 
 }
 
@@ -79,6 +91,8 @@ class Connection {
 	channel;
 
 	packet_callbacks = [];
+
+	elements = {};
 
 	static async new(p_lobbyId, p_username) {
 		var _connection = new Connection();
@@ -143,6 +157,7 @@ class Connection {
 				// }
 			]
 		})
+		this.peer.addEventListener('connectionstatechange', this.on_connection_state_change.bind(this));
 
 		this.channel = this.peer.createDataChannel("data", { negotiated: true, id: 1 });
 		this.channel.addEventListener('message', this.on_packet.bind(this));
@@ -230,6 +245,8 @@ class Connection {
 		console.log("Peer connection state changed to: " + this.peer.connectionState);
 		switch (this.peer.connectionState) {
 			case "connected":
+				print("Connected");
+				$("#content").empty();
 				break;
 			case "failed":
 				Failed();
@@ -242,16 +259,32 @@ class Connection {
 	on_packet(in_packet) {
 		var magic = new DataView(in_packet.data, 0, 4).getInt32(0, true);
 		var packet = new DataView(in_packet.data, 4);
-		console.log("Magic: " + magic.toString() + ", Packet: " + new TextDecoder("utf-8").decode(packet));
+		const text_decoder = new TextDecoder("utf-8");
+		const text_encoder = new TextEncoder();
+		console.log("Magic: " + magic.toString() + ", Packet: " + text_decoder.decode(packet));
 
 		switch (magic) {
-			case Magic.Username:
-				this.prepend_and_send(Magic.Username, new TextEncoder().encode(this.username));
+			case Magic.USERNAME:
+				this.prepend_and_send(Magic.USERNAME, text_encoder.encode(this.username));
 				break;
-			case Magic.SetPage:
-				var page = new TextDecoder("utf-8").decode(packet);
-				console.log("Set page to: " + page);
-				// loadPage(page);
+			case Magic.ADD_CHILDREN:
+				var data = JSON.parse(text_decoder.decode(packet));
+				if (data.parent == "root") {
+					for (const child of data.children) {
+						document.getElementById("content").insertAdjacentElement(
+							'beforeend',
+							this.CreateElementFromData(child)
+						);
+					}
+
+				} else {
+					for (const child of data.children) {
+						this.elements[data.parent].insertAdjacentElement(
+							'beforeend',
+							this.CreateElementFromData(child)
+						);
+					}
+				}
 				break;
 			default:
 				for (const callback of this.packet_callbacks) {
@@ -261,6 +294,20 @@ class Connection {
 				}
 				break;
 		}
+	}
+
+	CreateElementFromData(data) {
+		var elem = document.createElement(data.tag);
+		this.elements[elem.unique_id]
+		for (const [attribute, value] of Object.entries(data.attributes)) {
+			elem.setAttribute(attribute, value);
+		}
+
+		for (const child of elem.children) {
+			var child_elem = this.CreateElementFromData(child);
+			elem.insertAdjacentElement('beforeend', child_elem);
+		}
+		return elem;
 	}
 
 	send_packet(packet) {
@@ -313,12 +360,7 @@ class Storage {
 	}
 
 	Write() {
-		if (connection == null) {
-			return;
-		}
-
 		localStorage.setItem("connection", JSON.stringify(this));
-
 	}
 
 	static Delete() {

@@ -46,6 +46,7 @@
 	};
 
 	var stored = await CheckStored();
+	console.log(stored);
 	if (stored != null) {
 		roomCode.value = stored.lobbyId;
 		playerName.value = stored.username;
