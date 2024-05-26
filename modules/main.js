@@ -1,5 +1,5 @@
 import $ from "/modules/jquery.js"
-import { awaitEvent } from "/modules/Common.js"
+import { awaitEvent, loadPage } from "/modules/Common.js"
 
 const api_url = "https://grad-api.smorsoft.com";
 const turn_urls = ["turn:turn1.smorsoft.com:3478", "stun:turn1.smorsoft.com"];
@@ -40,7 +40,9 @@ export const Magic = {
 	DISCONNECT: -5,
 	UPDATE_ATTRIBUTE: -6,
 	REPARENT: -7,
-	REQUEST_ATTRIBUTE: -8
+	REQUEST_ATTRIBUTE: -8,
+	LOCAL_BYTES: -9,
+	LOCAL_EVENT: -10,
 };
 
 
@@ -57,12 +59,18 @@ function CreateHTTPRequest(base_url, path, parameters) {
 	return request;
 }
 
-function Failed() {
+function Reset() {
+	connection = null;
+	$("#content").empty();
+	loadPage("/html/home.html")
+}
 
+function Failed() {
+	Reset();
 }
 
 function LostConnection() {
-
+	Reset();
 }
 
 async function CheckLobby(lobbyId) {
@@ -78,7 +86,7 @@ async function CheckLobby(lobbyId) {
 			method: "GET",
 		});
 	} catch (e) {
-		console.warn(e);
+		// console.warn(e);
 	}
 }
 
@@ -93,6 +101,9 @@ class Connection {
 	packet_callbacks = [];
 
 	elements = {};
+
+	static text_decoder = new TextDecoder("utf-8");
+	static text_encoder = new TextEncoder();
 
 	static async new(p_lobbyId, p_username) {
 		var _connection = new Connection();
@@ -186,7 +197,7 @@ class Connection {
 			},
 			error: (error) => {
 				console.log(error);
-				alert("Unable to join :(");
+				Failed();
 			}
 		});
 
@@ -245,11 +256,10 @@ class Connection {
 		console.log("Peer connection state changed to: " + this.peer.connectionState);
 		switch (this.peer.connectionState) {
 			case "connected":
-				print("Connected");
 				$("#content").empty();
 				break;
 			case "failed":
-				Failed();
+				LostConnection();
 				break;
 			default:
 				break;
@@ -259,16 +269,14 @@ class Connection {
 	on_packet(in_packet) {
 		var magic = new DataView(in_packet.data, 0, 4).getInt32(0, true);
 		var packet = new DataView(in_packet.data, 4);
-		const text_decoder = new TextDecoder("utf-8");
-		const text_encoder = new TextEncoder();
-		console.log("Magic: " + magic.toString() + ", Packet: " + text_decoder.decode(packet));
+		// console.log("Magic: " + magic.toString() + ", Packet: " + Connection.text_decoder.decode(packet));
 
 		switch (magic) {
 			case Magic.USERNAME:
-				this.prepend_and_send(Magic.USERNAME, text_encoder.encode(this.username));
+				this.prepend_and_send(Magic.USERNAME, Connection.text_encoder.encode(this.username));
 				break;
 			case Magic.ADD_CHILDREN:
-				var data = JSON.parse(text_decoder.decode(packet));
+				var data = JSON.parse(Connection.text_decoder.decode(packet));
 				if (data.parent == "root") {
 					for (const child of data.children) {
 						document.getElementById("content").insertAdjacentElement(
@@ -286,6 +294,15 @@ class Connection {
 					}
 				}
 				break;
+			case Magic.UPDATE_ATTRIBUTE:
+				var data = JSON.parse(Connection.text_decoder.decode(packet));
+				var elem = this.elements[data.unique_id];
+				if (data.value == null) {
+					elem.removeAttribute(data.attribute);
+				} else {
+					elem.setAttribute(data.attribute, data.value);
+				}
+				break;
 			default:
 				for (const callback of this.packet_callbacks) {
 					if (callback != null) {
@@ -298,7 +315,34 @@ class Connection {
 
 	CreateElementFromData(data) {
 		var elem = document.createElement(data.tag);
-		this.elements[elem.unique_id]
+		elem.unique_id = data.unique_id;
+		elem.sendEvent = (event, data = {}) => {
+			this.prepend_and_send(Magic.LOCAL_EVENT, Connection.text_encoder.encode(JSON.stringify({
+				unique_id: elem.unique_id,
+				event: event,
+				data: data,
+			})));
+		};
+		elem.sendGlobalEvent = (event, data = {}) => {
+			this.prepend_and_send(Magic.EVENT, Connection.text_encoder.encode(JSON.stringify({
+				event: event,
+				data: data,
+			})));
+		};
+		elem.sendBytes = (data = new Uint8Array(0)) => {
+			var unique_id = Connection.text_encoder.encode(elem.unique_id);
+			var packet = new ArrayBuffer(4 + unique_id.byteLength + data.byteLength);
+			var dataView = new DataView(packet);
+			dataView.setInt32(0, unique_id.byteLength, true);
+			new Uint8Array(packet).set(new Uint8Array(unique_id), 4);
+			new Uint8Array(packet).set(new Uint8Array(data), 4 + unique_id.byteLength);
+			this.prepend_and_send(Magic.LOCAL_BYTES, packet);
+		};
+		elem.sendGlobalBytes = (data = new Uint8Array(0)) => {
+			this.prepend_and_send(Magic.BYTES, data);
+		};
+
+		this.elements[elem.unique_id] = elem;
 		for (const [attribute, value] of Object.entries(data.attributes)) {
 			elem.setAttribute(attribute, value);
 		}

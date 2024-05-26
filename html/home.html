@@ -19,15 +19,10 @@
 	var joinButton = document.getElementById("join-button");
 
 	async function verify_room_code() {
-		console.log("1")
 		if (roomCode.value.length >= 4) {
-			console.log("2")
-
 			var check = await CheckLobby(roomCode.value);
 			console.log(check);
 			if (check != null && check.state == 0) {
-				console.log("3")
-
 				joinButton.removeAttribute("disabled");
 				return;
 			}
