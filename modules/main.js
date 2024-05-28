@@ -275,6 +275,9 @@ class Connection {
 			case Magic.USERNAME:
 				this.prepend_and_send(Magic.USERNAME, Connection.text_encoder.encode(this.username));
 				break;
+			case Magic.DISCONNECT:
+				LostConnection();
+				break;
 			case Magic.ADD_CHILDREN:
 				var data = JSON.parse(Connection.text_decoder.decode(packet));
 				if (data.parent == "root") {
@@ -302,6 +305,9 @@ class Connection {
 				} else {
 					elem.setAttribute(data.attribute, data.value);
 				}
+				break;
+			case Magic.REQUEST_ATTRIBUTE:
+
 				break;
 			default:
 				for (const callback of this.packet_callbacks) {
