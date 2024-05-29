@@ -1,4 +1,4 @@
-import { LitElement as CustomElement, css, html } from "/modules/lit-core.min.js"
+import { LitElement as CustomElement, css, html, classMap, styleMap } from "/modules/lit-all.min.js"
 
 let customElementMixin = {
 	unique_id: String,
@@ -13,4 +13,4 @@ let customElementMixin = {
 
 Object.assign(CustomElement.prototype, customElementMixin);
 
-export { CustomElement, css, html };
+export { CustomElement, css, html, classMap, styleMap };

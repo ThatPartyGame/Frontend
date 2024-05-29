@@ -32,3 +32,7 @@ export function setPage(html) {
 export function awaitEvent(obj, event) {
 	return new Promise(resolve => obj.addEventListener(event, (e) => resolve(e)));
 }
+
+export function clamp(value, min, max) {
+	return Math.min(Math.max(value, min), max);
+}
