@@ -362,30 +362,12 @@ class Connection {
 	}
 
 	SetAttribute(elem, attribute, value) {
-		console.log(typeof value);
 		if (value == null) {
-			elem.removeAttribute(attribute);
+			elem[attribute] = null;
 			return;
 		}
-		switch (typeof value) {
-			case "function":
-				return;
-			case "boolean":
-				break;
-			case "bigint":
-				break;
-			case "number":
-				break;
-			case "object":
-				value = JSON.stringify(value);
-			case "symbol":
-				break;
-			case "undefined":
-				elem.removeAttribute(attribute);
-				return;
-		};
 
-		elem.setAttribute(attribute, value.replaceAll('"', '\"'));
+		elem[attribute] = value;
 	}
 
 	send_packet(packet) {

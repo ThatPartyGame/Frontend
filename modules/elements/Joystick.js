@@ -1,8 +1,9 @@
 import { CustomElement, css, html, classMap, styleMap } from "/modules/Element.js";
-import { clamp } from "/modules/Common.js";
 
 export default class Joystick extends CustomElement {
 	static properties = {
+		keyboard_inputs: { type: Object },
+
 		outer_ring_classes: { state: true },
 		outer_ring_style: { state: true },
 		inner_circle_classes: { state: true },
@@ -39,13 +40,26 @@ export default class Joystick extends CustomElement {
 		}
 	`;
 
+
+
 	startLocation = {};
+	mouseValue = { x: 0.0, y: 0.0 };
 	value = { x: 0.0, y: 0.0 };
 
-	mouseIsDown = false;
+	up = false;
+	left = false;
+	down = false;
+	right = false;
 
 	constructor() {
 		super();
+		this.keyboard_inputs = {
+			up: ["w", "ArrowUp"],
+			left: ["a", "ArrowLeft"],
+			down: ["s", "ArrowDown"],
+			right: ["d", "ArrowRight"]
+		};
+
 		this.reset();
 
 		this.addEventListener('touchstart', this.touchStart);
@@ -56,6 +70,80 @@ export default class Joystick extends CustomElement {
 		this.addEventListener('mousedown', this.mouseDown);
 		this.addEventListener('mousemove', this.mouseMove);
 		window.addEventListener('mouseup', this.mouseUp.bind(this));
+
+		window.addEventListener("keydown", (e) => {
+			if (e.repeat) { return }
+			if (this.disabled) { return }
+			if (this.keyboard_inputs == null) { return }
+
+			for (const key of this.keyboard_inputs.up) {
+				if (key.toLowerCase() != e.key.toLowerCase()) {
+					continue;
+				}
+				this.up = true;
+				break;
+			}
+			for (const key of this.keyboard_inputs.left) {
+				if (key.toLowerCase() != e.key.toLowerCase()) {
+					continue;
+				}
+				this.left = true;
+				break;
+			}
+			for (const key of this.keyboard_inputs.down) {
+				if (key.toLowerCase() != e.key.toLowerCase()) {
+					continue;
+				}
+				this.down = true;
+				break;
+			}
+			for (const key of this.keyboard_inputs.right) {
+				if (key.toLowerCase() != e.key.toLowerCase()) {
+					continue;
+				}
+				this.right = true;
+				break;
+			}
+
+			this.checkStart();
+			this.joystickUpdate();
+		});
+		window.addEventListener("keyup", (e) => {
+			if (e.repeat) { return }
+			if (this.disabled) { return }
+			if (this.keyboard_inputs == null) { return }
+
+			for (const key of this.keyboard_inputs.up) {
+				if (key.toLowerCase() != e.key.toLowerCase()) {
+					continue;
+				}
+				this.up = false;
+				break;
+			}
+			for (const key of this.keyboard_inputs.left) {
+				if (key.toLowerCase() != e.key.toLowerCase()) {
+					continue;
+				}
+				this.left = false;
+				break;
+			}
+			for (const key of this.keyboard_inputs.down) {
+				if (key.toLowerCase() != e.key.toLowerCase()) {
+					continue;
+				}
+				this.down = false;
+				break;
+			}
+			for (const key of this.keyboard_inputs.right) {
+				if (key.toLowerCase() != e.key.toLowerCase()) {
+					continue;
+				}
+				this.right = false;
+				break;
+			}
+
+			this.joystickUpdate();
+		});
 	}
 
 	dataRequested() {
@@ -69,13 +157,64 @@ export default class Joystick extends CustomElement {
 		this.inner_circle_classes = {};
 		this.inner_circle_style = { left: "50%", top: "50%" };
 
-		this.startLocation = {};
+		this.startLocation = null;
+	}
+
+	checkStart() {
+		if ((this.up || this.left || this.down || this.right) || this.startLocation != null) {
+			this.outer_ring_classes = { disabled: false };
+		}
+	}
+
+	joystickUpdate() {
+		var x = 0.0;
+		var y = 0.0;
+		if (this.up || this.left || this.down || this.right) {
+			if (this.up) y += -1.0;
+			if (this.left) x += -1.0;
+			if (this.down) y += 1.0;
+			if (this.right) x += 1.0;
+
+			var magnitude = Math.sqrt((x * x) + (y * y));
+			if (magnitude >= 1.0) {
+				x = x / magnitude;
+				y = y / magnitude;
+			} else {
+				x = x;
+				y = y;
+			}
+		} else if (this.startLocation != null && this.mouseValue != null) {
+			x = this.mouseValue.x;
+			y = this.mouseValue.y;
+		} else {
+			this.reset();
+		}
+
+		x = Number(x.toFixed(2));
+		y = Number(y.toFixed(2));
+
+		if (this.value.x == x && this.value.y == y) {
+			return;
+		}
+
+		this.value = {
+			x: x,
+			y: y,
+		};
+
+		this.inner_circle_style = { left: ((this.value.x + 1) / 2 * 100) + "%", top: ((this.value.y + 1) / 2 * 100) + "%" };
+
 	}
 
 	start(clientX, clientY) {
-		this.outer_ring_classes = { disabled: false };
+		if (this.up || this.left || this.down || this.right) {
+			return;
+		}
+
 		this.startLocation = { clientX: clientX, clientY: clientY }
 		this.outer_ring_style = { left: this.startLocation.clientX + "px", top: this.startLocation.clientY + "px" };
+		this.checkStart();
+		this.joystickUpdate();
 	}
 
 	move(clientX, clientY) {
@@ -83,20 +222,27 @@ export default class Joystick extends CustomElement {
 		var y = ((clientY - this.startLocation.clientY)) / 75;
 
 		var magnitude = Math.sqrt((x * x) + (y * y));
-		if (magnitude <= 1) {
+		if (magnitude < 1) {
 			magnitude = 1;
 		}
 
-		this.value = {
-			x: (x / magnitude).toFixed(3),
-			y: (-(y / magnitude)).toFixed(3),
+		this.mouseValue = {
+			x: x / magnitude,
+			y: y / magnitude,
 		};
 
-		this.inner_circle_style = { left: ((parseFloat(this.value.x) + 1) / 2 * 100) + "%", top: ((-parseFloat(this.value.y) + 1) / 2 * 100) + "%" };
+		this.joystickUpdate();
 	}
 
 	end() {
-		this.reset();
+		if (this.startLocation == null) {
+			return;
+		}
+		this.mouseValue = { x: 0.0, y: 0.0 };
+		this.startLocation = null
+		this.outer_ring_style = { left: "50%", top: "50%" };
+		this.inner_circle_style = { left: "50%", top: "50%" };
+		this.joystickUpdate();
 	}
 
 	touchStart(e) {
@@ -121,12 +267,12 @@ export default class Joystick extends CustomElement {
 		if (e.which != 1) {
 			return;
 		}
-		this.mouseIsDown = true;
+
 		this.start(e.clientX, e.clientY);
 	}
 
 	mouseMove(e) {
-		if (!this.mouseIsDown) {
+		if (this.startLocation == null) {
 			return;
 		}
 		this.move(e.clientX, e.clientY);
@@ -137,8 +283,7 @@ export default class Joystick extends CustomElement {
 		if (e.which != 1) {
 			return;
 		}
-		this.mouseIsDown = false;
-		this.reset();
+		this.end();
 	}
 
 	connectedCallback() {

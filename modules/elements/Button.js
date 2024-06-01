@@ -32,8 +32,8 @@ export default class Button extends CustomElement {
 
 	`;
 
-	connectedCallback() {
-		super.connectedCallback();
+	constructor() {
+		super();
 		window.addEventListener("keydown", (e) => {
 			if (e.repeat) { return }
 			if (this.disabled) { return }
