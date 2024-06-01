@@ -276,6 +276,7 @@ class Connection {
 				this.prepend_and_send(Magic.USERNAME, Connection.text_encoder.encode(this.username));
 				break;
 			case Magic.DISCONNECT:
+				Storage.Delete();
 				LostConnection();
 				break;
 			case Magic.ADD_CHILDREN:
@@ -301,9 +302,9 @@ class Connection {
 				var data = JSON.parse(Connection.text_decoder.decode(packet));
 				var elem = this.elements[data.unique_id];
 				if (data.value == null) {
-					elem.removeAttribute(data.attribute);
+					this.SetAttribute(elem, attribute, null);
 				} else {
-					elem.setAttribute(data.attribute, data.value);
+					this.SetAttribute(elem, attribute, value);
 				}
 				break;
 			case Magic.REQUEST_ATTRIBUTE:
@@ -350,7 +351,7 @@ class Connection {
 
 		this.elements[elem.unique_id] = elem;
 		for (const [attribute, value] of Object.entries(data.attributes)) {
-			elem.setAttribute(attribute, value);
+			this.SetAttribute(elem, attribute, value);
 		}
 
 		for (const child of elem.children) {
@@ -358,6 +359,33 @@ class Connection {
 			elem.insertAdjacentElement('beforeend', child_elem);
 		}
 		return elem;
+	}
+
+	SetAttribute(elem, attribute, value) {
+		console.log(typeof value);
+		if (value == null) {
+			elem.removeAttribute(attribute);
+			return;
+		}
+		switch (typeof value) {
+			case "function":
+				return;
+			case "boolean":
+				break;
+			case "bigint":
+				break;
+			case "number":
+				break;
+			case "object":
+				value = JSON.stringify(value);
+			case "symbol":
+				break;
+			case "undefined":
+				elem.removeAttribute(attribute);
+				return;
+		};
+
+		elem.setAttribute(attribute, value.replaceAll('"', '\"'));
 	}
 
 	send_packet(packet) {

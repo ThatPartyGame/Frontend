@@ -42,6 +42,8 @@ export default class Joystick extends CustomElement {
 	startLocation = {};
 	value = { x: 0.0, y: 0.0 };
 
+	mouseIsDown = false;
+
 	constructor() {
 		super();
 		this.reset();
@@ -50,6 +52,10 @@ export default class Joystick extends CustomElement {
 		this.addEventListener('touchmove', this.touchMove);
 		this.addEventListener('touchend', this.touchEnd);
 		this.addEventListener('touchcancel', this.touchEnd);
+
+		this.addEventListener('mousedown', this.mouseDown);
+		this.addEventListener('mousemove', this.mouseMove);
+		window.addEventListener('mouseup', this.mouseUp.bind(this));
 	}
 
 	dataRequested() {
@@ -66,42 +72,72 @@ export default class Joystick extends CustomElement {
 		this.startLocation = {};
 	}
 
+	start(clientX, clientY) {
+		this.outer_ring_classes = { disabled: false };
+		this.startLocation = { clientX: clientX, clientY: clientY }
+		this.outer_ring_style = { left: this.startLocation.clientX + "px", top: this.startLocation.clientY + "px" };
+	}
+
+	move(clientX, clientY) {
+		var x = (clientX - this.startLocation.clientX) / 75;
+		var y = ((clientY - this.startLocation.clientY)) / 75;
+
+		var magnitude = Math.sqrt((x * x) + (y * y));
+		if (magnitude <= 1) {
+			magnitude = 1;
+		}
+
+		this.value = {
+			x: (x / magnitude).toFixed(3),
+			y: (-(y / magnitude)).toFixed(3),
+		};
+
+		this.inner_circle_style = { left: ((parseFloat(this.value.x) + 1) / 2 * 100) + "%", top: ((-parseFloat(this.value.y) + 1) / 2 * 100) + "%" };
+	}
+
+	end() {
+		this.reset();
+	}
+
 	touchStart(e) {
 		e.preventDefault();
 		e.stopPropagation();
-
-		this.outer_ring_classes = { disabled: false };
-		this.startLocation = { clientX: e.targetTouches[0].clientX, clientY: e.targetTouches[0].clientY }
-		this.outer_ring_style = { left: this.startLocation.clientX + "px", top: this.startLocation.clientY + "px" };
+		this.start(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
 	}
 
 	touchMove(e) {
 		e.preventDefault();
 		e.stopPropagation();
-
-		var x = clamp((e.targetTouches[0].clientX - this.startLocation.clientX) / 75, -1.0, 1.0);
-		var y = clamp(((e.targetTouches[0].clientY - this.startLocation.clientY)) / 75, -1.0, 1.0);
-
-		var magnitude = 1.0;
-		if (Math.abs(x) + Math.abs(y) > 1.1) {
-			magnitude = Math.sqrt((x * x) + (y * y));
-
-		}
-
-		this.value = {
-			x: x / magnitude,
-			y: y / magnitude,
-		};
-
-		console.log(this.value);
-		this.inner_circle_style = { left: ((this.value.x + 1) / 2 * 100) + "%", top: ((this.value.y + 1) / 2 * 100) + "%" };
-		// console.log(this.inner_circle_style);
+		this.move(e.targetTouches[0].clientX, e.targetTouches[0].clientY)
 	}
 
 	touchEnd(e) {
 		e.preventDefault();
 		e.stopPropagation();
+		this.end();
+	}
 
+	mouseDown(e) {
+		if (e.which != 1) {
+			return;
+		}
+		this.mouseIsDown = true;
+		this.start(e.clientX, e.clientY);
+	}
+
+	mouseMove(e) {
+		if (!this.mouseIsDown) {
+			return;
+		}
+		this.move(e.clientX, e.clientY);
+
+	}
+
+	mouseUp(e) {
+		if (e.which != 1) {
+			return;
+		}
+		this.mouseIsDown = false;
 		this.reset();
 	}
 

@@ -3,8 +3,8 @@ import { CustomElement, css, html } from "/modules/Element.js";
 export default class Button extends CustomElement {
 	static properties = {
 		text: { type: String },
-		keyboard_inputs: { type: String },
-		disabled: { type: Boolean },
+		keyboard_inputs: { type: Array },
+		disabled: { type: Boolean, reflect: true },
 		pressed: { type: Boolean, state: true, attribute: false }
 	}
 
@@ -39,7 +39,7 @@ export default class Button extends CustomElement {
 			if (this.disabled) { return }
 
 			if (this.keyboard_inputs == null) { return }
-			for (const allowed_inputs of this.keyboard_inputs.split(",")) {
+			for (const allowed_inputs of this.keyboard_inputs) {
 				if (allowed_inputs.toLowerCase() != e.key.toLowerCase()) {
 					continue;
 				}
@@ -53,7 +53,7 @@ export default class Button extends CustomElement {
 			if (this.disabled) { return }
 
 			if (this.keyboard_inputs == null) { return }
-			for (const allowed_inputs of this.keyboard_inputs.split(",")) {
+			for (const allowed_inputs of this.keyboard_inputs) {
 				if (allowed_inputs.toLowerCase() != e.key.toLowerCase()) {
 					continue;
 				}
@@ -97,7 +97,7 @@ export default class Button extends CustomElement {
 		e.preventDefault();
 		e.stopPropagation();
 		if (this.disabled) { return }
-		
+
 		this.pressed = false;
 		this.sendEvent("up");
 		this.sendEvent("pressed");
