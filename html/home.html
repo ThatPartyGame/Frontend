@@ -12,6 +12,7 @@
 
 <script type="module">
 	import { CheckStored, CheckLobby, Join } from "/modules/main.js"
+	import { getAllUrlParams } from "/modules/Common.js"
 
 	var joinForm = document.getElementById("join-form");
 	var roomCode = document.getElementById("room-code");
@@ -24,11 +25,12 @@
 			console.log(check);
 			if (check != null && check.state == 0) {
 				joinButton.removeAttribute("disabled");
-				return;
+				return true;
 			}
 		}
 
 		joinButton.setAttribute("disabled", true);
+		return false;
 	}
 
 	joinForm.onsubmit = (e) => {
@@ -39,6 +41,18 @@
 	roomCode.oninput = (_) => {
 		verify_room_code();
 	};
+
+	// Debug stuff
+	var urlParams = getAllUrlParams();
+	if (urlParams.lobby_id != null && urlParams.username != null) {
+		roomCode.value = urlParams.lobby_id;
+		playerName.value = urlParams.username;
+		if (await verify_room_code()) {
+			Join(roomCode.value, playerName.value);
+		}
+		window.history.pushState({}, document.title, "/");
+	}
+	// End Debug stuff
 
 	var stored = await CheckStored();
 	console.log(stored);

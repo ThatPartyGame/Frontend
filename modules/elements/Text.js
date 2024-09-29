@@ -5,9 +5,19 @@ export default class Text extends CustomElement {
 		text: { type: String },
 	}
 
-	connectedCallback() {
-		super.connectedCallback();
-		this.sendEvent("test", { data: "awesome_data" });
+	static styles = css`
+		p {
+			/* background-color: var(--bg-color); */
+			position: relative;
+			width: fit-content;
+			margin: 0;
+			padding: 0;
+		}
+	`;
+
+	constructor() {
+		super();
+		// console.log(Text.styles);
 	}
 
 	render() {
@@ -15,4 +25,4 @@ export default class Text extends CustomElement {
 	}
 }
 
-customElements.define('v1-text', Text);
+customElements.define('v1-test', Text);

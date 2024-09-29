@@ -11,6 +11,17 @@ export default class Joystick extends CustomElement {
 	}
 
 	static styles = css`
+		:host {
+			display: block;
+			position: relative;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+
 		#outer-ring {
 			position: relative;
 			width: 150px;
@@ -40,11 +51,12 @@ export default class Joystick extends CustomElement {
 		}
 	`;
 
+	static text_encoder = new TextEncoder();
 
-
-	startLocation = {};
-	mouseValue = { x: 0.0, y: 0.0 };
 	value = { x: 0.0, y: 0.0 };
+
+	startLocation = null;
+	mouseValue = { x: 0.0, y: 0.0 };
 
 	up = false;
 	left = false;
@@ -53,12 +65,7 @@ export default class Joystick extends CustomElement {
 
 	constructor() {
 		super();
-		this.keyboard_inputs = {
-			up: ["w", "ArrowUp"],
-			left: ["a", "ArrowLeft"],
-			down: ["s", "ArrowDown"],
-			right: ["d", "ArrowRight"]
-		};
+		this.keyboard_inputs = {};
 
 		this.reset();
 
@@ -71,7 +78,7 @@ export default class Joystick extends CustomElement {
 		this.addEventListener('mousemove', this.mouseMove);
 		window.addEventListener('mouseup', this.mouseUp.bind(this));
 
-		window.addEventListener("keydown", (e) => {
+		window.addEventListener('keydown', (e) => {
 			if (e.repeat) { return }
 			if (this.disabled) { return }
 			if (this.keyboard_inputs == null) { return }
@@ -108,7 +115,7 @@ export default class Joystick extends CustomElement {
 			this.checkStart();
 			this.joystickUpdate();
 		});
-		window.addEventListener("keyup", (e) => {
+		window.addEventListener('keyup', (e) => {
 			if (e.repeat) { return }
 			if (this.disabled) { return }
 			if (this.keyboard_inputs == null) { return }
@@ -145,11 +152,7 @@ export default class Joystick extends CustomElement {
 			this.joystickUpdate();
 		});
 	}
-
-	dataRequested() {
-		return value
-	}
-
+	
 	reset() {
 		this.outer_ring_classes = { disabled: true };
 		this.outer_ring_style = { left: "50%", top: "50%" };
@@ -202,8 +205,8 @@ export default class Joystick extends CustomElement {
 			y: y,
 		};
 
+		this.sendBytes(Joystick.text_encoder.encode("" + this.value.x.toFixed(2) + "," + this.value.y.toFixed(2)));
 		this.inner_circle_style = { left: ((this.value.x + 1) / 2 * 100) + "%", top: ((this.value.y + 1) / 2 * 100) + "%" };
-
 	}
 
 	start(clientX, clientY) {

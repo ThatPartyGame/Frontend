@@ -269,7 +269,7 @@ class Connection {
 	on_packet(in_packet) {
 		var magic = new DataView(in_packet.data, 0, 4).getInt32(0, true);
 		var packet = new DataView(in_packet.data, 4);
-		// console.log("Magic: " + magic.toString() + ", Packet: " + Connection.text_decoder.decode(packet));
+		console.log("Magic: " + magic.toString() + ", Packet: " + Connection.text_decoder.decode(packet));
 
 		switch (magic) {
 			case Magic.USERNAME:
@@ -353,6 +353,8 @@ class Connection {
 		for (const [attribute, value] of Object.entries(data.attributes)) {
 			this.SetAttribute(elem, attribute, value);
 		}
+
+		elem.updateStyle(data.style);
 
 		for (const child of elem.children) {
 			var child_elem = this.CreateElementFromData(child);

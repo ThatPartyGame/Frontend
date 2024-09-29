@@ -9,6 +9,17 @@ export default class Button extends CustomElement {
 	}
 
 	static styles = css`
+		:host {
+			display: block;
+			position: relative;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+
 		div {
 			background-color: white;
 			text-align: center;
