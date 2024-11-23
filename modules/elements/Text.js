@@ -6,10 +6,10 @@ export default class Text extends CustomElement {
 	}
 
 	static styles = css`
-		p {
-			/* background-color: var(--bg-color); */
-			position: relative;
-			width: fit-content;
+		div {
+			background-color: var(--bg-color);
+			width: 100%;
+			height: 100%;
 			margin: 0;
 			padding: 0;
 		}
@@ -21,7 +21,7 @@ export default class Text extends CustomElement {
 	}
 
 	render() {
-		return html`<p>${this.text}</p>`;
+		return html`<div>${this.text}<slot></slot></div>`;
 	}
 }
 

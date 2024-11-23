@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Editor</title>
+	<link rel="stylesheet" href="css/index.css">
+</head>
+
+<body>
+	<div id="content" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; background-color: white;">
+		<!-- <v1-test style="background-color: blue; height: 100px; width: 100px;"> -->
+			<!-- abow -->
+			<!-- <v1-test style="background-color: red; height: 100px; width: 100px;"> -->
+			
+			<!-- </v1-test> -->
+		<!-- </v1-test> -->
+	</div>
+	<div id="data" style="position:absolute; width: 100%; height: 20%; bottom: 0; left: 0; overflow-x: hidden; overflow-y: auto;"></div>
+	<script type="text/javascript" src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+	<script type="module" src="/modules/main.js"></script>
+	<script type="module" src="/modules/Element.js"></script>
+	<script type="module" src="/modules/elements/Text.js"></script>
+	<script type="module" src="/modules/elements/Joystick.js"></script>
+	<script type="module" src="/modules/elements/Button.js"></script>
+	<script type="module" src="/modules/elements/Grid.js"></script>
+</body>
+
+</html>
+
+<script type="module">
+	import { CustomElement } from "/modules/Element.js"
+
+	window.logText = function TestLog(log) {
+		var elem = document.createElement("p")
+		elem.textContent = JSON.stringify(log);
+		document.getElementById("data").insertAdjacentElement('beforeend', elem);
+	}
+
+	window.updateData = function updateData(data) {
+		document.getElementById("data").replaceChildren([]);
+		document.getElementById("content").replaceChildren([]);
+		
+
+		let content = document.getElementById("content");
+		for (const child of data) {
+			// window.logText(child);
+			// window.logText(CustomElement.createFromData(child));
+			content.appendChild(CustomElement.createFromData(child));
+			// content.insertAdjacentElement('beforeend', CustomElement.createFromData(child));
+			function printChild(elem) {
+				for (const child of elem.children) {
+					// window.logText("child ++")
+					// window.logText("ABOw")
+					printChild(child);
+				}
+			}
+			printChild(content);
+			// window.logText(content.childElementCount);
+		}
+
+	}
+
+	function setPercentVariables() {
+
+	}
+
+	document.getElementById("content").onresize = (e) => { setPercentVariables(); };
+</script>

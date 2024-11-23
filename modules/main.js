@@ -285,7 +285,7 @@ class Connection {
 					for (const child of data.children) {
 						document.getElementById("content").insertAdjacentElement(
 							'beforeend',
-							this.CreateElementFromData(child)
+							CustomElement.createFromData(child)
 						);
 					}
 
@@ -293,7 +293,7 @@ class Connection {
 					for (const child of data.children) {
 						this.elements[data.parent].insertAdjacentElement(
 							'beforeend',
-							this.CreateElementFromData(child)
+							CustomElement.createFromData(child)
 						);
 					}
 				}
@@ -318,58 +318,6 @@ class Connection {
 				}
 				break;
 		}
-	}
-
-	CreateElementFromData(data) {
-		var elem = document.createElement(data.tag);
-		elem.unique_id = data.unique_id;
-		elem.sendEvent = (event, data = {}) => {
-			this.prepend_and_send(Magic.LOCAL_EVENT, Connection.text_encoder.encode(JSON.stringify({
-				unique_id: elem.unique_id,
-				event: event,
-				data: data,
-			})));
-		};
-		elem.sendGlobalEvent = (event, data = {}) => {
-			this.prepend_and_send(Magic.EVENT, Connection.text_encoder.encode(JSON.stringify({
-				event: event,
-				data: data,
-			})));
-		};
-		elem.sendBytes = (data = new Uint8Array(0)) => {
-			var unique_id = Connection.text_encoder.encode(elem.unique_id);
-			var packet = new ArrayBuffer(4 + unique_id.byteLength + data.byteLength);
-			var dataView = new DataView(packet);
-			dataView.setInt32(0, unique_id.byteLength, true);
-			new Uint8Array(packet).set(new Uint8Array(unique_id), 4);
-			new Uint8Array(packet).set(new Uint8Array(data), 4 + unique_id.byteLength);
-			this.prepend_and_send(Magic.LOCAL_BYTES, packet);
-		};
-		elem.sendGlobalBytes = (data = new Uint8Array(0)) => {
-			this.prepend_and_send(Magic.BYTES, data);
-		};
-
-		this.elements[elem.unique_id] = elem;
-		for (const [attribute, value] of Object.entries(data.attributes)) {
-			this.SetAttribute(elem, attribute, value);
-		}
-
-		elem.updateStyle(data.style);
-
-		for (const child of elem.children) {
-			var child_elem = this.CreateElementFromData(child);
-			elem.insertAdjacentElement('beforeend', child_elem);
-		}
-		return elem;
-	}
-
-	SetAttribute(elem, attribute, value) {
-		if (value == null) {
-			elem[attribute] = null;
-			return;
-		}
-
-		elem[attribute] = value;
 	}
 
 	send_packet(packet) {
