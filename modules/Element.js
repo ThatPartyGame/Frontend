@@ -76,9 +76,6 @@ class CustomElement extends LitElement {
 		this.style.top = "0";
 		this.style.left = "0";
 		this.style.display = "block";
-		// this.style.backgroundColor = "blue";
-		// this.style.width = "100px";
-		// this.style.height = "100px";
 	}
 
 	updateStyle(newStyle) {

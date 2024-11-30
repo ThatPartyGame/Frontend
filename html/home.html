@@ -3,27 +3,23 @@
 		<label for="room-code">Room Code</label>
 		<input required minlength="4" placeholder="XXXX" type="text" id="room-code" name="room-code">
 		<!-- <br> -->
-		<label for="player-name">Name</label>
-		<input maxlength="12" placeholder="Enter your name" type="text" id="player-name" name="player-name">
 		<br>
 		<input disabled id="join-button" type="submit" value="Join">
 	</form>
 </section>
 
 <script type="module">
-	import { CheckStored, CheckLobby, Join } from "/modules/main.js"
+	import { Main } from "/modules/main.js"
 	import { getAllUrlParams } from "/modules/Common.js"
 
 	var joinForm = document.getElementById("join-form");
 	var roomCode = document.getElementById("room-code");
-	var playerName = document.getElementById("player-name");
 	var joinButton = document.getElementById("join-button");
 
 	async function verify_room_code() {
 		if (roomCode.value.length >= 4) {
-			var check = await CheckLobby(roomCode.value);
-			console.log(check);
-			if (check != null && check.state == 0) {
+			var check = await Main.singleton.check_lobby(roomCode.value);
+			if (check != null && check.slots_available > 0) {
 				joinButton.removeAttribute("disabled");
 				return true;
 			}
@@ -33,16 +29,16 @@
 		return false;
 	}
 
-	joinForm.onsubmit = (e) => {
+	joinForm.onsubmit = async (e) => {
 		e.preventDefault();
-		Join(roomCode.value, playerName.value);
+		await Main.singleton.try_join(roomCode.value);
 	};
 
 	roomCode.oninput = (_) => {
 		verify_room_code();
 	};
 
-	// Debug stuff
+	//#fold Debug stuff
 	var urlParams = getAllUrlParams();
 	if (urlParams.lobby_id != null && urlParams.username != null) {
 		roomCode.value = urlParams.lobby_id;
@@ -52,13 +48,13 @@
 		}
 		window.history.pushState({}, document.title, "/");
 	}
-	// End Debug stuff
+	//#endfold End Debug stuff
 
-	var stored = await CheckStored();
-	console.log(stored);
-	if (stored != null) {
-		roomCode.value = stored.lobbyId;
-		playerName.value = stored.username;
-		verify_room_code();
-	}
+	// var stored = await CheckStored();
+	// console.log(stored);
+	// if (stored != null) {
+	// 	roomCode.value = stored.lobbyId;
+	// 	playerName.value = stored.username;
+	// 	verify_room_code();
+	// }
 </script>

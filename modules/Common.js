@@ -1,5 +1,9 @@
 import $ from "/modules/jquery.js"
 
+export var text_encoder = new TextEncoder();
+export var text_decoder = new TextDecoder("utf-8");
+
+
 var controller;
 var signal;
 
@@ -27,14 +31,45 @@ export function setPage(html) {
 	$("#content").html(html);
 }
 
-// export function setPage()
-
 export function awaitEvent(obj, event) {
 	return new Promise(resolve => obj.addEventListener(event, (e) => resolve(e)));
 }
 
 export function clamp(value, min, max) {
 	return Math.min(Math.max(value, min), max);
+}
+
+export function with_magic(magic, msg) {
+	if (magic > 127 || magic < -127) {
+		console.error("Cannot set magic outside of int8 range");
+		return;
+	}
+
+	var out_buffer = new ArrayBuffer(msg.byteLength + 1);
+	var data_view = new DataView(out_buffer);
+	data_view.setInt8(0, magic);
+	new Int8Array(out_buffer).set(new Int8Array(msg), 1);
+
+	return out_buffer;
+}
+
+export async function get_magic(data) {
+	var data_view = new DataView(await data.arrayBuffer());
+	return data_view.getInt8(0);
+}
+
+export async function get_data(data) {
+	var slice = (await data.arrayBuffer()).slice(1);
+	return slice;
+}
+
+export async function get_string(data) {
+	var slice = await get_data(data);
+	return text_decoder.decode(slice);
+}
+
+export function await_event(obj, event) {
+	return new Promise(resolve => obj.addEventListener(event, (e) => resolve(e)));
 }
 
 export function getAllUrlParams(url) {
