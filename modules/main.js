@@ -1,6 +1,6 @@
 import $ from "/modules/jquery.js"
 
-import { with_magic, text_encoder, text_decoder, get_magic, get_string, await_event } from "/modules/Common.js"
+import { with_magic, text_encoder, text_decoder, get_magic, get_string, get_data, await_event } from "/modules/Common.js"
 
 const api_url = "ws://127.0.0.1:80/frontend";
 const turn_urls = ["turn:turn1.smorsoft.com:3478", "stun:turn1.smorsoft.com"];
@@ -86,26 +86,25 @@ class Main {
 		}
 
 		response = JSON.parse(response);
-		this.#web_rtc = new WebRTC(lobby_id.toUpperCase(), response.unique_id);
-
-		var offer = await this.#web_rtc.create_offer();
-
-		console.log(JSON.stringify(offer));
-		this.#web_socket.send(text_encoder.encode(JSON.stringify(offer)));
-
-
-
+		this.#web_rtc = new WebRTC(this.#web_socket, lobby_id.toUpperCase(), response.unique_id);
+		this.#web_socket.onmessage = (e) => {
+			this.#web_rtc.on_signaling_event(e);
+		};
+		this.#web_rtc.create_offer();
 	}
 }
 
 class WebRTC {
 	#peer;
+	#channel;
 	#turn_username;
 	#unique_id;
 
-	#local_ice_candidates;
+	#web_socket;
 
-	constructor(p_lobby_id, p_unique_id) {
+
+	constructor(p_web_socket, p_lobby_id, p_unique_id) {
+		this.#web_socket = p_web_socket;
 		this.#turn_username = p_lobby_id.toUpperCase() + "." + p_unique_id;
 		this.#unique_id = p_unique_id;
 
@@ -120,20 +119,57 @@ class WebRTC {
 
 		});
 
-		this.#peer.onicegatheringstatechange = (eve) => {
-			console.log(eve);
+		this.#channel = this.#peer.createDataChannel("data", { negotiated: true, id: 1 });
+
+		this.#peer.onicecandidate = (e) => {
+			this.on_ice_candidate(e);
 		};
 	}
 
-	async onicegatheringstatechange() {
-		return new Promise(resolve => this.#peer.onicegatheringstatechange = (event) => resolve(event));
+	async on_signaling_event(e) {
+		var server_status = await get_magic(e.data);
+		var data = await get_data(e.data);
+		var host_status = await get_magic(data);
+		console.log(await get_string(data));
+
+		if (server_status < 0 || host_status < 0) {
+
+			return;
+		}
+		var response = JSON.parse(await get_string(data));
+		if (response["type"] != null && response["sdp"] != null) {
+			await this.#peer.setRemoteDescription(response);
+			if (response["type"] == "offer") {
+				var answer = await this.#peer.createAnswer();
+				this.#web_socket.send(with_magic(0, text_encoder.encode(this.#unique_id + JSON.stringify(answer))));
+				await this.#peer.setLocalDescription(answer);
+			}
+		} else if (response["media"] != null && response["index"] != null && response["name"] != null) {
+			var candidate = new RTCIceCandidate({
+				sdpMid: response["media"],
+				sdpMLineIndex: response["index"],
+				candidate: response["name"]
+			});
+			await this.#peer.addIceCandidate(candidate);
+		}
+
 	}
 
-	async onicecandidate() {
-		return new Promise(resolve => this.#peer.onicecandidate = (event) => resolve(event));
+	async on_ice_candidate(e) {
+		if (e.candidate == null) {
+			return;
+		}
+
+		this.#web_socket.send(with_magic(0, text_encoder.encode(this.#unique_id + JSON.stringify({
+			"media": e.candidate.sdpMid,
+			"index": e.candidate.sdpMLineIndex,
+			"name": e.candidate.candidate,
+		}))));
 	}
 
 	async create_offer() {
-		return this.#peer.createOffer();
+		var offer = await this.#peer.createOffer();
+		this.#web_socket.send(with_magic(0, text_encoder.encode(this.#unique_id + JSON.stringify(offer))));
+		await this.#peer.setLocalDescription(offer);
 	}
 }

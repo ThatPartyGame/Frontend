@@ -54,12 +54,20 @@ export function with_magic(magic, msg) {
 }
 
 export async function get_magic(data) {
-	var data_view = new DataView(await data.arrayBuffer());
+	var buffer = data;
+	if (data.arrayBuffer != null) {
+		buffer = await data.arrayBuffer();
+	}
+	var data_view = new DataView(buffer);
 	return data_view.getInt8(0);
 }
 
 export async function get_data(data) {
-	var slice = (await data.arrayBuffer()).slice(1);
+	var buffer = data;
+	if (data.arrayBuffer != null) {
+		buffer = await data.arrayBuffer();
+	}
+	var slice = (buffer).slice(1);
 	return slice;
 }
 
